@@ -1,0 +1,11 @@
+# nanopb requires bounded sizes for strings and repeated fields so it can
+# emit fixed-size C structs. Tune these to the smallest values that still
+# fit your real node identifiers and sensor lists.
+
+* max_size:24
+* max_count:4
+
+sciot.NodeAdvert.fw_version max_size:12
+sciot.SensorCap.unit max_size:8
+sciot.Reading.text max_size:32
+sciot.Command.text max_size:32

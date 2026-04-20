@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package sciot;
+
+// Sent by a node on connect and periodically so the hub can discover
+// capabilities without prior configuration.
+message NodeAdvert {
+    string node_id = 1;
+    string hw = 2;
+    string fw_version = 3;
+    repeated SensorCap sensors = 4;
+    repeated ActuatorCap actuators = 5;
+}
+
+message SensorCap {
+    string sensor_id = 1;
+    string kind = 2;
+    string unit = 3;
+}
+
+message ActuatorCap {
+    string actuator_id = 1;
+    string kind = 2;
+}
+
+// A batch of readings from one node.
+message Telemetry {
+    string node_id = 1;
+    uint64 timestamp_ms = 2;
+    repeated Reading readings = 3;
+}
+
+message Reading {
+    string sensor_id = 1;
+    oneof value {
+        double number = 2;
+        bool boolean = 3;
+        string text = 4;
+    }
+}
