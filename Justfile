@@ -40,6 +40,24 @@ pub topic message:
 add pkg:
     uv add {{pkg}}
 
+# Regenerate Python + nanopb sources from proto/*.proto.
+# Requires: `uv add --dev grpcio-tools nanopb`.
+proto:
+    mkdir -p src/hub/proto firmware/common/src
+    uv run python -m grpc_tools.protoc -Iproto \
+        --python_out=src/hub/proto proto/telemetry.proto proto/command.proto
+    touch src/hub/proto/__init__.py
+    uv run nanopb_generator -I proto -D firmware/common/src \
+        -f proto/nanopb.options proto/telemetry.proto proto/command.proto
+
+# Build a node project: `just fw node-example`.
+fw node:
+    cd firmware/{{node}} && pio run
+
+# Refresh compile_commands.json for a node: `just fw-compiledb node-example`.
+fw-compiledb node:
+    cd firmware/{{node}} && pio run -t compiledb
+
 # Remove __pycache__ directories and the venv.
 clean:
     find . -type d -name __pycache__ -prune -exec rm -rf {} +

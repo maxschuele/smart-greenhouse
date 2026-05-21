@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package sciot;
+
+// A command addressed to a single actuator on a node.
+// The node_id is implicit in the MQTT topic (nodes/<node_id>/command).
+message Command {
+    string actuator_id = 1;
+    oneof value {
+        double number = 2;
+        bool boolean = 3;
+        string text = 4;
+    }
+}
