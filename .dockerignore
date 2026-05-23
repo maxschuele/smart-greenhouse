@@ -1,0 +1,11 @@
+.venv/
+.git/
+.ruff_cache/
+__pycache__/
+**/__pycache__/
+*.pyc
+.uv-cache/
+data/
+firmware/
+doc/
+.nvim.lua

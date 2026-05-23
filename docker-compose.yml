@@ -10,6 +10,20 @@ services:
       - mosquitto-data:/mosquitto/data
       - mosquitto-log:/mosquitto/log
 
+  # hub:
+  #   build: .
+  #   container_name: sciot-hub
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - mosquitto
+  #   environment:
+  #     MQTT_HOST: mosquitto
+  #     MQTT_PORT: "1883"
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./data:/app/data
+
 volumes:
   mosquitto-data:
   mosquitto-log:

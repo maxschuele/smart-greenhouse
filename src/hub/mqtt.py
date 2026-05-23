@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 import aiomqtt
 
@@ -7,8 +8,8 @@ from hub import db
 
 log = logging.getLogger(__name__)
 
-MQTT_HOST = "localhost"
-MQTT_PORT = 1883
+MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 
 
 async def _publisher(client: aiomqtt.Client) -> None:
