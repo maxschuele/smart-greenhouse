@@ -8,9 +8,9 @@
 #include "command.pb.h"
 #include "telemetry.pb.h"
 
-namespace sciot {
+namespace sgh {
 
-using CommandHandler = void (*)(const sciot_Command &cmd);
+using CommandHandler = void (*)(const sgh_Command &cmd);
 
 class Node {
 public:
@@ -21,7 +21,7 @@ public:
     void loop();
 
     void onCommand(CommandHandler handler);
-    bool publishTelemetry(const sciot_Telemetry &msg);
+    bool publishTelemetry(const sgh_Telemetry &msg);
     void handleMqtt(char *topic, uint8_t *payload, unsigned int len);
 
 private:
@@ -37,4 +37,4 @@ private:
     uint32_t last_advert_ms_ = 0;
 };
 
-} // namespace sciot
+} // namespace sgh

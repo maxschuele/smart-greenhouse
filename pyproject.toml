@@ -1,7 +1,7 @@
 [project]
-name = "sciot-hub"
+name = "sgh-hub"
 version = "0.1.0"
-description = "Central control hub for the SCIoT smart buildings framework"
+description = "Central control hub for the SGH smart buildings framework"
 requires-python = ">=3.14"
 dependencies = [
     "aiomqtt>=2.3.0",

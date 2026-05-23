@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package sciot;
+package sgh;
 
 // A command addressed to a single actuator on a node.
 // The node_id is implicit in the MQTT topic (nodes/<node_id>/command).

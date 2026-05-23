@@ -5,7 +5,7 @@
 * max_size:24
 * max_count:4
 
-sciot.NodeAdvert.fw_version max_size:12
-sciot.SensorCap.unit max_size:8
-sciot.Reading.text max_size:32
-sciot.Command.text max_size:32
+sgh.NodeAdvert.fw_version max_size:12
+sgh.SensorCap.unit max_size:8
+sgh.Reading.text max_size:32
+sgh.Command.text max_size:32

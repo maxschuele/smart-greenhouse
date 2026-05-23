@@ -1,10 +1,10 @@
-#include "SciotNode.h"
+#include "SghNode.h"
 
 #include <WiFi.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
 
-namespace sciot {
+namespace sgh {
 
 namespace {
 
@@ -51,10 +51,10 @@ void Node::onCommand(CommandHandler handler) {
     cmd_handler_ = handler;
 }
 
-bool Node::publishTelemetry(const sciot_Telemetry &msg) {
+bool Node::publishTelemetry(const sgh_Telemetry &msg) {
     uint8_t buf[PAYLOAD_BUF];
     pb_ostream_t stream = pb_ostream_from_buffer(buf, sizeof(buf));
-    if (!pb_encode(&stream, sciot_Telemetry_fields, &msg))
+    if (!pb_encode(&stream, sgh_Telemetry_fields, &msg))
         return false;
     char topic[64];
     snprintf(topic, sizeof(topic), "nodes/%s/telemetry", node_id_);
@@ -76,14 +76,14 @@ void Node::ensureConnected() {
 }
 
 void Node::publishAdvert() {
-    sciot_NodeAdvert msg = sciot_NodeAdvert_init_zero;
+    sgh_NodeAdvert msg = sgh_NodeAdvert_init_zero;
     strncpy(msg.node_id, node_id_, sizeof(msg.node_id) - 1);
     strncpy(msg.hw, hw_, sizeof(msg.hw) - 1);
     strncpy(msg.fw_version, fw_version_, sizeof(msg.fw_version) - 1);
 
     uint8_t buf[PAYLOAD_BUF];
     pb_ostream_t stream = pb_ostream_from_buffer(buf, sizeof(buf));
-    if (!pb_encode(&stream, sciot_NodeAdvert_fields, &msg))
+    if (!pb_encode(&stream, sgh_NodeAdvert_fields, &msg))
         return;
 
     char topic[64];
@@ -94,11 +94,11 @@ void Node::publishAdvert() {
 void Node::handleMqtt(char * /*topic*/, uint8_t *payload, unsigned int len) {
     if (!cmd_handler_)
         return;
-    sciot_Command cmd = sciot_Command_init_zero;
+    sgh_Command cmd = sgh_Command_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(payload, len);
-    if (pb_decode(&stream, sciot_Command_fields, &cmd)) {
+    if (pb_decode(&stream, sgh_Command_fields, &cmd)) {
         cmd_handler_(cmd);
     }
 }
 
-} // namespace sciot
+} // namespace sgh

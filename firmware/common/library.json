@@ -1,7 +1,7 @@
 {
-    "name": "sciot-common",
+    "name": "sgh-common",
     "version": "0.1.0",
-    "description": "Shared MQTT + protobuf glue for SCIoT sensor/actuator nodes.",
+    "description": "Shared MQTT + protobuf glue for SGH sensor/actuator nodes.",
     "keywords": ["mqtt", "protobuf", "iot"],
     "frameworks": "arduino",
     "platforms": "espressif32",

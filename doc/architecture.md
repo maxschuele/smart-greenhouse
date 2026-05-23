@@ -30,7 +30,7 @@ Design and implementation of a system within the specified context and focus
 
 ## Project Proposal
 
-### Modular Smart Buildings Framework
+### Smart Greenhouse: Modular Framework
 
 Build wireless sensor/actuator nodes using ESP32 that communicate over a custom MQTT protocol to a Central Control Node/Hub. 
 The main goal here is to build a modular adaptive system. 

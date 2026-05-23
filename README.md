@@ -1,7 +1,8 @@
-# SCIoT Project
+# Smart Greenhouse
 
-Smart Cities & IoT course project: ESP32 sensor/actuator nodes talk to a central
-hub over MQTT using a shared protobuf schema. The repo has three parts:
+Smart Cities & IoT course project: a modular smart-greenhouse system. ESP32
+sensor/actuator nodes talk to a central hub over MQTT using a shared protobuf
+schema. The repo has three parts:
 
 - **`proto/`** — message schema shared by hub and firmware.
 - **`firmware/`** — ESP32 nodes (PlatformIO, C++) built on a shared library.
@@ -51,7 +52,7 @@ are generated artifacts — edit the `.proto` files, not the output.
 
 PlatformIO projects, one per node.
 
-- `common/` — shared C++ library (`sciot::Node`) that handles WiFi, MQTT
+- `common/` — shared C++ library (`sgh::Node`) that handles WiFi, MQTT
   reconnect, advertising, telemetry publish, and command dispatch. Generated
   nanopb sources live alongside it.
 - `node-example/` — minimal template. Copy this directory to start a real node;
@@ -99,7 +100,7 @@ deploy/mosquitto/          Broker config
 proto/                     Shared message schema
 src/hub/                   Python hub (installed by uv sync)
 firmware/
-  common/                  Shared C++ library (SciotNode + nanopb)
+  common/                  Shared C++ library (SghNode + nanopb)
   node-example/            Template node project
 doc/                       Architecture notes and command cheat sheet
 ```

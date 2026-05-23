@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package sciot;
+package sgh;
 
 // Sent by a node on connect and periodically so the hub can discover
 // capabilities without prior configuration.

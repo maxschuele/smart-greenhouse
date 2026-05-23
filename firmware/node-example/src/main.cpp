@@ -1,10 +1,10 @@
 #include <Arduino.h>
 
-#include "SciotNode.h"
+#include "SghNode.h"
 
-static sciot::Node node(NODE_ID, "xiao-esp32c3", "0.1.0");
+static sgh::Node node(NODE_ID, "xiao-esp32c3", "0.1.0");
 
-static void onCommand(const sciot_Command &cmd) {
+static void onCommand(const sgh_Command &cmd) {
     (void)cmd; // dispatch on cmd.actuator_id, act on cmd.value
 }
 
@@ -18,7 +18,7 @@ void setup() {
 void loop() {
     node.loop();
 
-    sciot_Telemetry msg = sciot_Telemetry_init_zero;
+    sgh_Telemetry msg = sgh_Telemetry_init_zero;
     // fill msg.node_id, msg.timestamp_ms, msg.readings[]
     node.publishTelemetry(msg);
     delay(5000);

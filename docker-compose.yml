@@ -1,7 +1,7 @@
 services:
   mosquitto:
     image: eclipse-mosquitto:2
-    container_name: sciot-mosquitto
+    container_name: sgh-mosquitto
     restart: unless-stopped
     ports:
       - "1883:1883"
@@ -12,7 +12,7 @@ services:
 
   # hub:
   #   build: .
-  #   container_name: sciot-hub
+  #   container_name: sgh-hub
   #   restart: unless-stopped
   #   depends_on:
   #     - mosquitto
