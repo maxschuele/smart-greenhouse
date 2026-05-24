@@ -4,7 +4,7 @@ import os
 
 import aiomqtt
 
-from hub import db
+from hub import bus, db
 
 log = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ async def _subscriber(client: aiomqtt.Client) -> None:
         topic = str(msg.topic)
         payload = msg.payload.decode()
         await db.insert_message(topic, payload)
+        bus.publish({"topic": topic, "payload": payload})
         log.info("recv %s: %s", topic, payload)
 
 

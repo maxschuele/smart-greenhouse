@@ -6,7 +6,8 @@ schema. The repo has three parts:
 
 - **`proto/`** — message schema shared by hub and firmware.
 - **`firmware/`** — ESP32 nodes (PlatformIO, C++) built on a shared library.
-- **`src/hub/`** — Python hub: MQTT loop, FastAPI dashboard, SQLite store.
+- **`src/hub/`** — Python hub: MQTT loop, FastAPI API, SQLite store.
+- **`frontend/`** — Svelte single-page dashboard, built with Vite and served by the hub.
 
 A Mosquitto broker (Docker) sits between them.
 
@@ -25,8 +26,19 @@ docker compose up -d     # start Mosquitto on :1883
 uv run python -m hub     # start the hub on :8000
 ```
 
+The hub serves the dashboard from `src/hub/static/`, which is the Svelte SPA
+build output. Build it once (the hub serves whatever is present):
+
+```
+cd frontend && npm install && npm run build
+```
+
 Open <http://localhost:8000>. The hub publishes `demo/heartbeat` every 5 s and
 subscribes to `demo/#`, so its own heartbeat appears within a few seconds.
+
+For frontend development, run the Vite dev server instead (`cd frontend && npm
+run dev`); it proxies `/api` and `/ws` to the hub on :8000 and provides hot
+reload.
 
 Stop with `docker compose down`.
 
@@ -75,15 +87,33 @@ Single async process (FastAPI + aiomqtt) launched via `python -m hub`.
 ```
 src/hub/
   __main__.py          Entrypoint; runs uvicorn
-  api.py               FastAPI app; starts the MQTT task via lifespan
+  api.py               FastAPI app; REST + /ws; starts the MQTT task via lifespan
   mqtt.py              aiomqtt pub/sub loop (currently the demo)
+  bus.py               In-process fan-out of messages to WebSocket clients
   db.py                aiosqlite store (latest payload per topic)
   proto/               Generated Python protobuf modules (`just proto`)
-  static/index.html    Dashboard; polls /api/messages
+  static/              Built Svelte SPA (output of `frontend/`; gitignored)
 ```
 
-The dashboard at <http://localhost:8000> shows the latest payload seen on each
-topic. `/api/messages` returns it as JSON.
+The hub exposes two interfaces consumed by the dashboard:
+
+- `GET /api/messages` returns the latest payload per topic as JSON.
+- `WS /ws` sends a `snapshot` of the current topics on connect, then a
+  `message` frame for every MQTT message as it arrives.
+
+### `frontend/` — Svelte dashboard
+
+Single-page app (Svelte, Vite, Tailwind, shadcn-svelte, svelte-chartjs,
+lucide). It loads the current state over `/ws`, groups messages by topic, charts
+numeric payloads, and has a placeholder panel for AI planning (current plan and
+planning model) to be wired up later.
+
+```
+cd frontend
+npm install        # install dependencies
+npm run dev        # dev server on :5173, proxies /api and /ws to :8000
+npm run build      # build into ../src/hub/static for the hub to serve
+```
 
 ## Common commands
 
@@ -99,6 +129,7 @@ docker-compose.yml         Mosquitto container
 deploy/mosquitto/          Broker config
 proto/                     Shared message schema
 src/hub/                   Python hub (installed by uv sync)
+frontend/                  Svelte dashboard (Vite build served by the hub)
 firmware/
   common/                  Shared C++ library (SghNode + nanopb)
   node-example/            Template node project
