@@ -48,7 +48,7 @@ proto:
         --python_out=src/hub/proto proto/telemetry.proto proto/command.proto
     touch src/hub/proto/__init__.py
     uv run nanopb_generator -I proto -D firmware/common/src \
-        -f proto/nanopb.options proto/telemetry.proto proto/command.proto
+        proto/telemetry.proto proto/command.proto
 
 # Build a node project: `just fw node-example`.
 fw node:
