@@ -31,9 +31,19 @@ Node::Node(const char *node_id, const char *hw, const char *fw_version)
 void Node::begin(const char *wifi_ssid, const char *wifi_pass,
                  const char *mqtt_host, uint16_t mqtt_port) {
     WiFi.mode(WIFI_STA);
+    WiFi.onEvent(
+        [](WiFiEvent_t /*event*/, WiFiEventInfo_t info) {
+            Serial.printf("WiFi: disconnect reason=%d\n",
+                          info.wifi_sta_disconnected.reason);
+        },
+        ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+    Serial.printf("WiFi: connecting to '%s'\n", wifi_ssid);
     WiFi.begin(wifi_ssid, wifi_pass);
-    while (WiFi.status() != WL_CONNECTED)
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.printf("WiFi: status=%d\n", WiFi.status());
         delay(200);
+    }
+    Serial.printf("WiFi: connected, ip=%s\n", WiFi.localIP().toString().c_str());
     mqtt_.setServer(mqtt_host, mqtt_port);
     mqtt_.setCallback(trampoline);
 }
