@@ -14,7 +14,7 @@ using CommandHandler = void (*)(const sgh_Command &cmd);
 
 class Node {
 public:
-    Node(const char *node_id, const char *hw, const char *fw_version);
+    Node(const char *node_id, const char *hw, const char *fw_version) noexcept;
 
     void begin(const char *wifi_ssid, const char *wifi_pass,
                const char *mqtt_host, uint16_t mqtt_port = 1883);

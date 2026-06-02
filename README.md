@@ -77,8 +77,9 @@ just fw node-example       # or: cd firmware/node-example && pio run
 just fw-compiledb node-example   # refresh compile_commands.json for clangd
 ```
 
-WiFi/MQTT credentials are passed as `build_flags` in each node's
-`platformio.ini`.
+Each node requires a `config.h` (gitignored) next to `main.cpp` defining
+`NODE_ID`, `WIFI_SSID`, `WIFI_PASS`, and `MQTT_HOST`. Copy
+`firmware/config.example.h` and fill in the values; the build fails without it.
 
 ### `src/hub/` — Python hub
 

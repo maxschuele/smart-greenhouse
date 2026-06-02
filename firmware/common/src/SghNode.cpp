@@ -1,9 +1,9 @@
 #include "SghNode.h"
 
+#include <Preferences.h>
 #include <WiFi.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
-
 namespace sgh {
 
 namespace {
@@ -20,7 +20,7 @@ void trampoline(char *topic, uint8_t *payload, unsigned int len) {
 
 } // namespace
 
-Node::Node(const char *node_id, const char *hw, const char *fw_version)
+Node::Node(const char *node_id, const char *hw, const char *fw_version) noexcept
     : node_id_(node_id),
       hw_(hw),
       fw_version_(fw_version),
@@ -43,7 +43,8 @@ void Node::begin(const char *wifi_ssid, const char *wifi_pass,
         Serial.printf("WiFi: status=%d\n", WiFi.status());
         delay(200);
     }
-    Serial.printf("WiFi: connected, ip=%s\n", WiFi.localIP().toString().c_str());
+    Serial.printf("WiFi: connected, ip=%s\n",
+                  WiFi.localIP().toString().c_str());
     mqtt_.setServer(mqtt_host, mqtt_port);
     mqtt_.setCallback(trampoline);
 }
@@ -74,10 +75,13 @@ bool Node::publishTelemetry(const sgh_Telemetry &msg) {
 void Node::ensureConnected() {
     if (mqtt_.connected())
         return;
+    Serial.printf("MQTT: connecting as '%s'\n", node_id_);
     if (!mqtt_.connect(node_id_)) {
+        Serial.printf("MQTT: connect failed, state=%d\n", mqtt_.state());
         delay(1000);
         return;
     }
+    Serial.println("MQTT: connected");
     char topic[64];
     snprintf(topic, sizeof(topic), "nodes/%s/command", node_id_);
     mqtt_.subscribe(topic);

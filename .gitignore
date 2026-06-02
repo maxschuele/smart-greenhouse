@@ -26,3 +26,5 @@ frontend/dist/
 # Clangd
 .cache/
 compile_commands.json
+
+config.h
