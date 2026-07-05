@@ -71,7 +71,7 @@
           <ActuatorToggle
             nodeId={node.id}
             {actuator}
-            state={node.readings[actuator.actuator_id]?.boolean}
+            reported={node.readings[actuator.actuator_id]?.boolean}
           />
         {/each}
       </div>

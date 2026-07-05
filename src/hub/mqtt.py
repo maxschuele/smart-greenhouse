@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import os
@@ -61,14 +60,6 @@ async def send_command(node_id: str, actuator_id: str, value: bool | float | str
     log.info("sent command to %s: %s = %r", node_id, actuator_id, value)
 
 
-async def _publisher(client: aiomqtt.Client) -> None:
-    counter = 0
-    while True:
-        await client.publish("demo/heartbeat", payload=f"hello {counter}")
-        counter += 1
-        await asyncio.sleep(5)
-
-
 async def _rehydrate(client: aiomqtt.Client) -> None:
     """Seed the registry from the latest persisted adverts on startup.
 
@@ -128,8 +119,6 @@ async def run() -> None:
     async with aiomqtt.Client(hostname=MQTT_HOST, port=MQTT_PORT) as client:
         _client = client
         try:
-            async with asyncio.TaskGroup() as tg:
-                tg.create_task(_subscriber(client))
-                tg.create_task(_publisher(client))
+            await _subscriber(client)
         finally:
             _client = None

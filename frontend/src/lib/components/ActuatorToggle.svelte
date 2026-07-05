@@ -7,8 +7,8 @@
   let {
     nodeId,
     actuator,
-    state,
-  }: { nodeId: string; actuator: ActuatorCap; state: boolean | undefined } = $props()
+    reported,
+  }: { nodeId: string; actuator: ActuatorCap; reported: boolean | undefined } = $props()
 
   // Optimistic toggle: show the desired state as pending until the node's
   // next telemetry confirms it (or a timeout gives up and reverts to truth).
@@ -16,19 +16,19 @@
   let failed = $state(false)
   let timeout: ReturnType<typeof setTimeout> | null = null
   const pending = $derived(desired !== null)
-  const shown = $derived(desired ?? state ?? false)
+  const shown = $derived(desired ?? reported ?? false)
 
   $effect(() => {
-    if (desired !== null && state === desired) {
+    if (desired !== null && reported === desired) {
       desired = null
       if (timeout) clearTimeout(timeout)
     }
   })
 
   async function toggle() {
-    if (pending || state === undefined) return
+    if (pending || reported === undefined) return
     failed = false
-    desired = !state
+    desired = !reported
     if (timeout) clearTimeout(timeout)
     timeout = setTimeout(() => (desired = null), 10_000)
     try {
@@ -57,7 +57,7 @@
     {/if}
     <Switch
       checked={shown}
-      disabled={pending || state === undefined}
+      disabled={pending || reported === undefined}
       onCheckedChange={toggle}
       aria-label={`toggle ${actuator.actuator_id}`}
     />
