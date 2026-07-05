@@ -48,10 +48,14 @@ async def insert_message(topic: str, payload: str) -> None:
     await _conn.commit()
 
 
-async def latest_per_topic() -> dict[str, str]:
+async def latest_per_topic() -> dict[str, dict]:
+    """Latest message per topic as {topic: {"payload": str, "ts": float}}.
+
+    ts is unixepoch seconds (float), the DB insert time.
+    """
     assert _conn is not None
     async with _conn.execute(
-        "SELECT topic, payload FROM messages "
+        "SELECT topic, payload, ts FROM messages "
         "WHERE id IN (SELECT MAX(id) FROM messages GROUP BY topic)"
     ) as cur:
-        return {topic: payload async for topic, payload in cur}
+        return {topic: {"payload": payload, "ts": ts} async for topic, payload, ts in cur}

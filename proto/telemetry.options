@@ -6,5 +6,7 @@
 * max_count:4
 
 sgh.NodeAdvert.fw_version max_size:12
+sgh.NodeAdvert.sensors max_count:8
 sgh.SensorCap.unit max_size:8
 sgh.Reading.text max_size:32
+sgh.Telemetry.readings max_count:8

@@ -1,10 +1,11 @@
 <script lang="ts">
   import ConnectionBadge from '$lib/components/ConnectionBadge.svelte'
   import NodeCard from '$lib/components/NodeCard.svelte'
+  import NodePanel from '$lib/components/NodePanel.svelte'
   import PlanningPanel from '$lib/components/PlanningPanel.svelte'
   import * as Tabs from '$lib/components/ui/tabs'
   import { connect } from '$lib/socket'
-  import { now, series, topics } from '$lib/stores'
+  import { nodes, now, series, topics } from '$lib/stores'
   import { Sprout } from '@lucide/svelte'
   import { onMount } from 'svelte'
 
@@ -14,7 +15,12 @@
     return () => clearInterval(tick)
   })
 
-  const sortedTopics = $derived(Object.keys($topics).sort())
+  const sortedNodes = $derived(Object.keys($nodes).sort())
+  const rawTopics = $derived(
+    Object.keys($topics)
+      .filter((t) => !t.startsWith('nodes/'))
+      .sort(),
+  )
 </script>
 
 <div class="min-h-svh">
@@ -33,19 +39,32 @@
         <Tabs.Trigger value="planning">AI Planning</Tabs.Trigger>
       </Tabs.List>
 
-      <Tabs.Content value="nodes" class="mt-6">
-        {#if sortedTopics.length === 0}
+      <Tabs.Content value="nodes" class="mt-6 space-y-6">
+        {#if sortedNodes.length === 0}
           <div
             class="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground"
           >
-            No messages yet. Waiting for nodes to publish...
+            No nodes discovered yet. Waiting for adverts...
           </div>
         {:else}
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {#each sortedTopics as topic (topic)}
-              <NodeCard {topic} state={$topics[topic]} points={$series[topic] ?? []} />
+            {#each sortedNodes as id (id)}
+              <NodePanel node={$nodes[id]} series={$series} />
             {/each}
           </div>
+        {/if}
+
+        {#if rawTopics.length > 0}
+          <details>
+            <summary class="cursor-pointer text-sm text-muted-foreground">
+              Raw topics ({rawTopics.length})
+            </summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {#each rawTopics as topic (topic)}
+                <NodeCard {topic} state={$topics[topic]} points={$series[topic] ?? []} />
+              {/each}
+            </div>
+          </details>
         {/if}
       </Tabs.Content>
 

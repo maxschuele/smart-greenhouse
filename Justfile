@@ -40,6 +40,13 @@ pub topic message:
 add pkg:
     uv add {{pkg}}
 
+# Send an actuator command via the hub API. Value is a JSON literal:
+# `just cmd node-plant1 pump true`, `just cmd node-greenhouse fan false`.
+cmd node actuator value:
+    curl -s -X POST localhost:8000/api/nodes/{{node}}/command \
+        -H 'Content-Type: application/json' \
+        -d '{"actuator_id": "{{actuator}}", "value": {{value}}}'
+
 # Regenerate Python + nanopb sources from proto/*.proto.
 # Requires: `uv add --dev grpcio-tools nanopb`.
 proto:

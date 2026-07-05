@@ -24,17 +24,22 @@ public:
     bool publishTelemetry(const sgh_Telemetry &msg);
     void handleMqtt(char *topic, uint8_t *payload, unsigned int len);
 
+    // Register capabilities during setup(), before begin(), so the first
+    // advert already carries them. Return false when the fixed-size advert
+    // arrays (see telemetry.options) are full.
+    bool addSensor(const char *sensor_id, const char *kind, const char *unit);
+    bool addActuator(const char *actuator_id, const char *kind);
+
 private:
     void ensureConnected();
     void publishAdvert();
 
     const char *node_id_;
-    const char *hw_;
-    const char *fw_version_;
     WiFiClient tcp_;
     PubSubClient mqtt_;
     CommandHandler cmd_handler_ = nullptr;
     uint32_t last_advert_ms_ = 0;
+    sgh_NodeAdvert advert_;
 };
 
 } // namespace sgh
