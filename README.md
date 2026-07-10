@@ -88,19 +88,46 @@ Single async process (FastAPI + aiomqtt) launched via `python -m hub`.
 ```
 src/hub/
   __main__.py          Entrypoint; runs uvicorn
-  api.py               FastAPI app; REST + /ws; starts the MQTT task via lifespan
-  mqtt.py              aiomqtt pub/sub loop (currently the demo)
+  api.py               FastAPI app; REST + /ws; starts the background tasks via lifespan
+  mqtt.py              aiomqtt pub/sub loop; node discovery + command publish
+  registry.py          In-memory node registry built from adverts
   bus.py               In-process fan-out of messages to WebSocket clients
   db.py                aiosqlite store (latest payload per topic)
+  weather.py           Virtual weather sensor (Open-Meteo -> virtual/weather)
+  planning/            AI planning: PDDL domain, problem generator,
+                       Fast Downward runner, plan executor, service loop
   proto/               Generated Python protobuf modules (`just proto`)
   static/              Built Svelte SPA (output of `frontend/`; gitignored)
 ```
 
-The hub exposes two interfaces consumed by the dashboard:
+The hub exposes these interfaces, consumed by the dashboard:
 
 - `GET /api/messages` returns the latest payload per topic as JSON.
+- `GET /api/nodes` returns discovered nodes with capabilities + online state.
+- `POST /api/nodes/{id}/command` sends an actuator command.
+- `GET /api/planning` / `PUT /api/planning/thresholds` expose the planning
+  state and its configuration.
 - `WS /ws` sends a `snapshot` of the current topics on connect, then a
   `message` frame for every MQTT message as it arrives.
+
+#### AI planning
+
+The hub replans automatically: it snapshots the world state, generates a PDDL
+problem when any care condition is violated, solves it with
+[Fast Downward](https://www.fast-downward.org/) (`astar(lmcut())`), and
+dispatches the plan steps as MQTT commands. See
+[doc/how-it-works.md](doc/how-it-works.md#ai-planning) for the full pipeline.
+
+Fast Downward is not bundled — build it once and point the hub at it:
+
+```
+git clone https://github.com/aibasel/downward.git && cd downward && ./build.py
+export FAST_DOWNWARD=/path/to/downward/fast-downward.py   # before `just run`
+```
+
+Without it the dashboard's AI Planning tab shows a planner error, and
+everything else keeps working. The optional weather sensor needs
+`WEATHER_LAT`/`WEATHER_LON` set (fake it with `just weather 0.8 33`).
 
 ### `frontend/` — Svelte dashboard
 

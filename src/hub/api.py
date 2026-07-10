@@ -1,13 +1,15 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from hub import bus, db, mqtt, registry
+from hub import bus, db, mqtt, registry, weather
+from hub.planning import service as planning
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,15 +22,21 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db.connect()
-    task = asyncio.create_task(mqtt.run())
+    tasks = [
+        asyncio.create_task(mqtt.run()),
+        asyncio.create_task(planning.run()),
+        asyncio.create_task(weather.run()),
+    ]
     try:
         yield
     finally:
-        task.cancel()
-        try:
-            await task
-        except (asyncio.CancelledError, Exception):
-            pass
+        for task in tasks:
+            task.cancel()
+        for task in tasks:
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
         await db.close()
 
 
@@ -67,6 +75,34 @@ async def command(node_id: str, cmd: Command) -> dict[str, str]:
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     return {"status": "sent"}
+
+
+@app.get("/api/planning")
+async def planning_state() -> dict:
+    """Latest planning result plus the thresholds driving problem generation."""
+    return {**planning.state, "thresholds": asdict(planning.thresholds)}
+
+
+class ThresholdsUpdate(BaseModel):
+    """Partial update; omitted fields keep their current value."""
+
+    moisture_dry_pct: float | None = None
+    moisture_dry_pct_hot: float | None = None
+    temp_high_c: float | None = None
+    humidity_high_pct: float | None = None
+    co2_high_ppm: float | None = None
+    tank_low_pct: float | None = None
+    cloud_cover_threshold: float | None = None
+    hot_forecast_c: float | None = None
+    tank_empty_cm: float | None = None
+    tank_full_cm: float | None = None
+
+
+@app.put("/api/planning/thresholds")
+async def update_thresholds(update: ThresholdsUpdate) -> dict:
+    for key, value in update.model_dump(exclude_none=True).items():
+        setattr(planning.thresholds, key, value)
+    return asdict(planning.thresholds)
 
 
 @app.websocket("/ws")

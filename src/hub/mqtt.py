@@ -42,6 +42,13 @@ def _decode(topic: str, payload: bytes) -> str:
     return json.dumps(MessageToDict(msg, preserving_proto_field_name=True))
 
 
+async def publish(topic: str, payload: str | bytes) -> None:
+    """Publish a raw payload; used by the planning service and virtual sensors."""
+    if _client is None:
+        raise RuntimeError("MQTT client not connected")
+    await _client.publish(topic, payload=payload)
+
+
 async def send_command(node_id: str, actuator_id: str, value: bool | float | str) -> None:
     """Publish a protobuf Command to nodes/<node_id>/command.
 
@@ -102,8 +109,13 @@ async def _discover(client: aiomqtt.Client, node_id: str, payload: str) -> None:
 async def _subscriber(client: aiomqtt.Client) -> None:
     # Telemetry topics are subscribed per node once its advert is seen; only
     # adverts (and the plain-text demo topics) use standing subscriptions.
+    # planning/# and virtual/# carry the hub's own planning artifacts and
+    # virtual sensors: subscribing to them routes those through the same
+    # persist + WebSocket pipeline as node data.
     await client.subscribe("demo/#")
     await client.subscribe("nodes/+/advert")
+    await client.subscribe("planning/#")
+    await client.subscribe("virtual/#")
     await _rehydrate(client)
     async for msg in client.messages:
         topic = str(msg.topic)

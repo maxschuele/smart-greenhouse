@@ -47,6 +47,13 @@ cmd node actuator value:
         -H 'Content-Type: application/json' \
         -d '{"actuator_id": "{{actuator}}", "value": {{value}}}'
 
+# Publish a fake weather reading (cloud cover 0-1, forecast max degC, day?).
+# `just weather 0.8 33` (cloudy day) or `just weather 0.1 20 false` (night)
+# -> both make the planner want the grow light on.
+weather cloud temp is_day="true":
+    docker compose exec mosquitto mosquitto_pub -t 'virtual/weather' \
+        -m '{"cloud_cover": {{cloud}}, "temp_forecast_c": {{temp}}, "is_day": {{is_day}}}'
+
 # Regenerate Python + nanopb sources from proto/*.proto.
 # Requires: `uv add --dev grpcio-tools nanopb`.
 proto:
