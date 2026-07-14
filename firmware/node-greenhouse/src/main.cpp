@@ -25,9 +25,13 @@ const float CURVE_A = 116.6020682F;  // ppm = A * (Rs/R0)^B
 const float CURVE_B = -2.769034857F;
 const float R0_CLEAN_AIR = 76.63F;   // kOhm, replace with a calibrated value
 
-// Relays, active-low modules (driving the pin LOW energizes the relay), same as
-// the plant node's pump. LED on D6, fan on D5.
+// LED on D6, driven directly by the pin: HIGH turns it on.
 #define LED_PIN D6
+#define LED_ON HIGH
+#define LED_OFF LOW
+
+// Fan relay on D5, active-low module (driving the pin LOW energizes the
+// relay), same as the plant node's pump.
 #define FAN_PIN D5
 #define RELAY_ON LOW
 #define RELAY_OFF HIGH
@@ -67,7 +71,7 @@ float readCO2ppm() {
 
 // HC-SR04: 10 us trigger pulse, then measure the echo high time. Speed of sound
 // gives cm = duration_us / 58. Returns NAN on timeout (no echo).
-float readDistanceCm() {
+float pingOnceCm() {
     digitalWrite(TRIG_PIN, LOW);
     delayMicroseconds(2);
     digitalWrite(TRIG_PIN, HIGH);
@@ -80,6 +84,30 @@ float readDistanceCm() {
     return duration / 58.0F;
 }
 
+// Median of several pings: ultrasonic noise is not Gaussian — a missed or
+// stray echo yields a wild outlier that would wreck an average, while the
+// median ignores it entirely. Timeouts are dropped; NAN when most pings fail.
+float readDistanceCm() {
+    const int pings = 5;
+    float valid[pings];
+    int n = 0;
+    for (int i = 0; i < pings; i++) {
+        float d = pingOnceCm();
+        if (!isnan(d))
+            valid[n++] = d;
+        delay(60); // let stray echoes die out before the next ping
+    }
+    if (n < 3)
+        return NAN;
+    for (int i = 1; i < n; i++) // insertion sort, n <= 5
+        for (int j = i; j > 0 && valid[j] < valid[j - 1]; j--) {
+            float tmp = valid[j];
+            valid[j] = valid[j - 1];
+            valid[j - 1] = tmp;
+        }
+    return valid[n / 2];
+}
+
 // Set by onCommand so the next loop() publishes telemetry immediately,
 // confirming the new actuator state without waiting out the 5 s period.
 bool pubNow = false;
@@ -87,7 +115,7 @@ bool pubNow = false;
 void onCommand(const sgh_Command &cmd) {
     if (strcmp(cmd.actuator_id, "led") == 0 &&
         cmd.which_value == sgh_Command_boolean_tag) {
-        digitalWrite(LED_PIN, cmd.value.boolean ? RELAY_ON : RELAY_OFF);
+        digitalWrite(LED_PIN, cmd.value.boolean ? LED_ON : LED_OFF);
         Serial.printf("led -> %s\n", cmd.value.boolean ? "on" : "off");
         pubNow = true;
     } else if (strcmp(cmd.actuator_id, "fan") == 0 &&
@@ -129,7 +157,7 @@ void setup() {
     node.addSensor("humidity", "humidity", "%");
     node.addSensor("co2_ppm", "gas", "ppm");
     node.addSensor("distance_cm", "distance", "cm");
-    node.addActuator("led", "relay");
+    node.addActuator("led", "led");
     node.addActuator("fan", "relay");
 
     node.onCommand(onCommand);
@@ -138,8 +166,8 @@ void setup() {
     dht.begin();
     analogSetPinAttenuation(MQ135_PIN, ADC_11db);
 
-    // Drive relays off before enabling the pins so they do not glitch on at boot.
-    digitalWrite(LED_PIN, RELAY_OFF);
+    // Drive outputs off before enabling the pins so they do not glitch on at boot.
+    digitalWrite(LED_PIN, LED_OFF);
     digitalWrite(FAN_PIN, RELAY_OFF);
     pinMode(LED_PIN, OUTPUT);
     pinMode(FAN_PIN, OUTPUT);
@@ -167,7 +195,7 @@ void loop() {
         addNumber(msg, "humidity", dht.readHumidity());
         addNumber(msg, "co2_ppm", readCO2ppm());
         addNumber(msg, "distance_cm", readDistanceCm());
-        addBoolean(msg, "led", digitalRead(LED_PIN) == RELAY_ON);
+        addBoolean(msg, "led", digitalRead(LED_PIN) == LED_ON);
         addBoolean(msg, "fan", digitalRead(FAN_PIN) == RELAY_ON);
 
         bool success = node.publishTelemetry(msg);

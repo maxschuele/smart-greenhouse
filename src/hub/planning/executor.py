@@ -5,6 +5,13 @@ objects in the plan ARE node ids, so irrigation needs no lookup table; the
 greenhouse-wide light/fan commands go to whichever node advertised those
 actuators (carried in the Snapshot).
 
+Irrigation is dosed, not latched: pump = true starts a fixed-length dose and
+the plant firmware stops the pump by itself a few seconds later (PUMP_RUN_MS
+in node-plant), so a lost command or a dead hub can never leave a pump
+running. One dose rarely lifts moisture past the threshold, so the service
+calls execute_irrigation() on the cycles in between to repeat the dose until
+the sensor reading crosses it.
+
 refill-tank is the human actuator: it publishes an alert on planning/alert
 for the dashboard and defers the plan's irrigate steps — they are the only
 actions that causally depend on the tank, and the pumps must not run dry.
@@ -64,3 +71,19 @@ async def execute(steps: list[PlanStep], snap: Snapshot) -> None:
             log.warning("no node advertises the actuator for %r; skipping", step.action)
             continue
         await mqtt.send_command(node, actuator, value)
+
+
+async def execute_irrigation(steps: list[PlanStep]) -> None:
+    """Re-dispatch only the irrigate doses of an already-executed plan.
+
+    Called on cycles where the problem did not change: the latching
+    actuators (light, fan) already hold their commanded state, but pump
+    doses are time-limited by the firmware, so a still-dry plant needs a
+    fresh dose each cycle. Skipped entirely while the plan waits on a tank
+    refill — the pumps must not run dry.
+    """
+    if any(s.action == "refill-tank" for s in steps):
+        return
+    for step in steps:
+        if step.action == "irrigate":
+            await mqtt.send_command(step.args[0], PUMP_ACTUATOR, True)

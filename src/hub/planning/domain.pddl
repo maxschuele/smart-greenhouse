@@ -37,6 +37,9 @@
 ; Plant objects ?p are node ids, so plans read e.g. (irrigate node-plant1).
 ;
 ;   irrigate ?p      -> nodes/<?p>/command             pump = true
+;                       (a timed dose: the plant firmware stops the pump by
+;                        itself after PUMP_RUN_MS; the hub re-sends the dose
+;                        each cycle while the soil stays dry)
 ;   deactivate-pump  -> nodes/<?p>/command             pump = false
 ;   activate-light   -> nodes/<greenhouse>/command     led  = true
 ;   deactivate-light -> nodes/<greenhouse>/command     led  = false
@@ -88,7 +91,8 @@
   ;; Irrigation  (per plant)
   ;; =========================================================================
 
-  ;; Run a plant's pump. Blocked only when the tank is empty.
+  ;; Start a timed watering dose (the firmware stops the pump on its own).
+  ;; Blocked only when the tank is empty.
   (:action irrigate
     :parameters  (?p - plant)
     :precondition (and (soil-dry ?p)
@@ -98,6 +102,9 @@
                        (increase (total-cost) 3))
   )
 
+  ;; Rare cleanup only: the firmware ends every dose itself, so this fires
+  ;; just when a snapshot happens to catch a pump mid-dose on soil that is
+  ;; no longer dry.
   (:action deactivate-pump
     :parameters  (?p - plant)
     :precondition (pump-active ?p)
