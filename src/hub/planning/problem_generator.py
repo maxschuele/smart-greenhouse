@@ -208,16 +208,23 @@ def generate_problem(
     temp_high = snap.temperature_c is not None and snap.temperature_c > th.temp_high_c
     hum_high = snap.humidity_pct is not None and snap.humidity_pct > th.humidity_high_pct
     co2_high = snap.co2_ppm is not None and snap.co2_ppm > th.co2_high_ppm
-    if temp_high:
-        init.append("(temp-high)")
-        goal.append("(not (temp-high))")
-    if hum_high:
-        init.append("(humidity-high)")
-        goal.append("(not (humidity-high))")
-    if co2_high:
-        init.append("(co2-high)")
-        goal.append("(not (co2-high))")
     ventilation_needed = temp_high or hum_high or co2_high
+    # A running fan is already addressing these conditions — ventilation acts
+    # over time, and asserting the goals anyway would make the planner
+    # power-cycle the fan (activate-fan is the only action clearing them and
+    # requires (not (fan-active))). So emit them only while the fan is off;
+    # the fan-off goal below stays gated on ventilation_needed, which keeps
+    # the fan running until the readings recover.
+    if not snap.fan_active:
+        if temp_high:
+            init.append("(temp-high)")
+            goal.append("(not (temp-high))")
+        if hum_high:
+            init.append("(humidity-high)")
+            goal.append("(not (humidity-high))")
+        if co2_high:
+            init.append("(co2-high)")
+            goal.append("(not (co2-high))")
 
     # ---- lighting (weather-driven) ---------------------------------------
     # The grow light is needed after dark (sunset..sunrise, from the weather
@@ -228,7 +235,10 @@ def generate_problem(
     dark = snap.is_day is False
     cloudy = snap.cloud_cover is not None and snap.cloud_cover >= th.cloud_cover_threshold
     light_needed = (dark or cloudy) and snap.light_node is not None
-    if light_needed:
+    # Same treatment as the fan below: a light that is already on satisfies
+    # the need, so emit the goal only while it is off — otherwise every
+    # cloudy/dark cycle would re-plan (and re-send) activate-light.
+    if light_needed and not snap.light_active:
         init.append("(light-needed)")
         goal.append("(not (light-needed))")
 
@@ -240,14 +250,15 @@ def generate_problem(
         goal.append("(not (tank-low))")
 
     # ---- actuator-off goals for greenhouse devices -----------------------
-    if snap.fan_active:
+    # (fan-active) is asserted only together with its off-goal: while the fan
+    # is needed it must stay invisible to the planner, or a cost-tied optimal
+    # plan could smuggle in a gratuitous 0-cost deactivate-fan.
+    if snap.fan_active and not ventilation_needed:
         init.append("(fan-active)")
-        if not ventilation_needed:
-            goal.append("(not (fan-active))")
-    if snap.light_active:
+        goal.append("(not (fan-active))")
+    if snap.light_active and not light_needed:
         init.append("(light-active)")
-        if not light_needed:
-            goal.append("(not (light-active))")
+        goal.append("(not (light-active))")
 
     if not goal:
         return None  # nothing to plan for this cycle
