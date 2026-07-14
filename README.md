@@ -94,6 +94,7 @@ src/hub/
   bus.py               In-process fan-out of messages to WebSocket clients
   db.py                aiosqlite store (latest payload per topic)
   weather.py           Virtual weather sensor (Open-Meteo or manual -> virtual/weather)
+  notify.py            Discord notifications (status digest + tank alerts)
   planning/            AI planning: PDDL domain, problem generator,
                        Fast Downward runner, plan executor, service loop
   proto/               Generated Python protobuf modules (`just proto`)
@@ -130,6 +131,12 @@ everything else keeps working. The weather sensor is configured from the
 dashboard's Weather card: enter coordinates for live Open-Meteo data, or
 switch it to manual mode and set cloud cover / forecast / daylight by hand
 (`WEATHER_LAT`/`WEATHER_LON`, if set, seed the coordinates on startup).
+
+Discord notifications are enabled by setting `DISCORD_WEBHOOK_URL` to a
+channel webhook (channel settings -> Integrations -> Webhooks): the hub then
+posts a status digest on an interval (`DISCORD_INTERVAL_S`, default hourly)
+and a ping when the water tank needs refilling (`DISCORD_MENTION="@here"` to
+mention the channel), plus an all-clear once it is refilled.
 
 ### `frontend/` — Svelte dashboard
 

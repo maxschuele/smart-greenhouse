@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from hub import bus, db, mqtt, registry, weather
+from hub import bus, db, mqtt, notify, registry, weather
 from hub.planning import service as planning
 
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(mqtt.run()),
         asyncio.create_task(planning.run()),
         asyncio.create_task(weather.run()),
+        asyncio.create_task(notify.run()),
     ]
     try:
         yield
