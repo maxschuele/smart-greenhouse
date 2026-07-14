@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 
+from typing import Literal
+
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from hub import bus, db, mqtt, registry, weather
 from hub.planning import service as planning
@@ -103,6 +105,37 @@ async def update_thresholds(update: ThresholdsUpdate) -> dict:
     for key, value in update.model_dump(exclude_none=True).items():
         setattr(planning.thresholds, key, value)
     return asdict(planning.thresholds)
+
+
+class WeatherUpdate(BaseModel):
+    """Partial update; omitted fields keep their current value.
+
+    lat/lon accept an explicit null to clear the coordinates, hence
+    exclude_unset (not exclude_none) below.
+    """
+
+    mode: Literal["auto", "manual"] | None = None
+    lat: float | None = Field(default=None, ge=-90.0, le=90.0)
+    lon: float | None = Field(default=None, ge=-180.0, le=180.0)
+    cloud_cover: float | None = Field(default=None, ge=0.0, le=1.0)
+    temp_forecast_c: float | None = Field(default=None, ge=-60.0, le=60.0)
+    is_day: bool | None = None
+
+
+@app.get("/api/weather")
+async def weather_config() -> dict:
+    """Weather source configuration (the published values arrive via /ws)."""
+    return asdict(weather.config)
+
+
+@app.put("/api/weather")
+async def update_weather(update: WeatherUpdate) -> dict:
+    for key, value in update.model_dump(exclude_unset=True).items():
+        if value is None and key not in ("lat", "lon"):
+            continue  # only the coordinates are clearable
+        setattr(weather.config, key, value)
+    weather.notify_changed()  # wake the loop so it publishes immediately
+    return asdict(weather.config)
 
 
 @app.websocket("/ws")

@@ -3,6 +3,7 @@
   import NodeCard from '$lib/components/NodeCard.svelte'
   import NodePanel from '$lib/components/NodePanel.svelte'
   import PlanningPanel from '$lib/components/PlanningPanel.svelte'
+  import WeatherPanel from '$lib/components/WeatherPanel.svelte'
   import * as Tabs from '$lib/components/ui/tabs'
   import { connect } from '$lib/socket'
   import { nodes, now, series, topics } from '$lib/stores'
@@ -46,13 +47,13 @@
           >
             No nodes discovered yet. Waiting for adverts...
           </div>
-        {:else}
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {#each sortedNodes as id (id)}
-              <NodePanel node={$nodes[id]} series={$series} />
-            {/each}
-          </div>
         {/if}
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {#each sortedNodes as id (id)}
+            <NodePanel node={$nodes[id]} series={$series} />
+          {/each}
+          <WeatherPanel />
+        </div>
 
         {#if rawTopics.length > 0}
           <details>

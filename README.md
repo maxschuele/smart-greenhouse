@@ -93,7 +93,7 @@ src/hub/
   registry.py          In-memory node registry built from adverts
   bus.py               In-process fan-out of messages to WebSocket clients
   db.py                aiosqlite store (latest payload per topic)
-  weather.py           Virtual weather sensor (Open-Meteo -> virtual/weather)
+  weather.py           Virtual weather sensor (Open-Meteo or manual -> virtual/weather)
   planning/            AI planning: PDDL domain, problem generator,
                        Fast Downward runner, plan executor, service loop
   proto/               Generated Python protobuf modules (`just proto`)
@@ -126,15 +126,18 @@ export FAST_DOWNWARD=/path/to/downward/fast-downward.py   # before `just run`
 ```
 
 Without it the dashboard's AI Planning tab shows a planner error, and
-everything else keeps working. The optional weather sensor needs
-`WEATHER_LAT`/`WEATHER_LON` set (fake it with `just weather 0.8 33`).
+everything else keeps working. The weather sensor is configured from the
+dashboard's Weather card: enter coordinates for live Open-Meteo data, or
+switch it to manual mode and set cloud cover / forecast / daylight by hand
+(`WEATHER_LAT`/`WEATHER_LON`, if set, seed the coordinates on startup).
 
 ### `frontend/` — Svelte dashboard
 
 Single-page app (Svelte, Vite, Tailwind, shadcn-svelte, svelte-chartjs,
 lucide). It loads the current state over `/ws`, groups messages by topic, charts
-numeric payloads, and has a placeholder panel for AI planning (current plan and
-planning model) to be wired up later.
+numeric payloads, controls the weather source (Weather card), and has an AI
+Planning tab showing the current plan and planning model plus an Automation
+config card for editing the planner thresholds.
 
 ```
 cd frontend

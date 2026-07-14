@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ThresholdsPanel from '$lib/components/ThresholdsPanel.svelte'
   import { Badge } from '$lib/components/ui/badge'
   import * as Card from '$lib/components/ui/card'
   import { Separator } from '$lib/components/ui/separator'
@@ -141,4 +142,6 @@
       {/each}
     </Card.Content>
   </Card.Root>
+
+  <ThresholdsPanel />
 </div>
