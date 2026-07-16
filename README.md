@@ -88,26 +88,63 @@ Single async process (FastAPI + aiomqtt) launched via `python -m hub`.
 ```
 src/hub/
   __main__.py          Entrypoint; runs uvicorn
-  api.py               FastAPI app; REST + /ws; starts the MQTT task via lifespan
-  mqtt.py              aiomqtt pub/sub loop (currently the demo)
+  api.py               FastAPI app; REST + /ws; starts the background tasks via lifespan
+  mqtt.py              aiomqtt pub/sub loop; node discovery + command publish
+  registry.py          In-memory node registry built from adverts
   bus.py               In-process fan-out of messages to WebSocket clients
   db.py                aiosqlite store (latest payload per topic)
+  weather.py           Virtual weather sensor (Open-Meteo or manual -> virtual/weather)
+  notify.py            Discord notifications (status digest + tank alerts)
+  planning/            AI planning: PDDL domain, problem generator,
+                       Fast Downward runner, plan executor, service loop
   proto/               Generated Python protobuf modules (`just proto`)
   static/              Built Svelte SPA (output of `frontend/`; gitignored)
 ```
 
-The hub exposes two interfaces consumed by the dashboard:
+The hub exposes these interfaces, consumed by the dashboard:
 
 - `GET /api/messages` returns the latest payload per topic as JSON.
+- `GET /api/nodes` returns discovered nodes with capabilities + online state.
+- `POST /api/nodes/{id}/command` sends an actuator command.
+- `GET /api/planning` / `PUT /api/planning/thresholds` expose the planning
+  state and its configuration.
 - `WS /ws` sends a `snapshot` of the current topics on connect, then a
   `message` frame for every MQTT message as it arrives.
+
+#### AI planning
+
+The hub replans automatically: it snapshots the world state, generates a PDDL
+problem when any care condition is violated, solves it with
+[Fast Downward](https://www.fast-downward.org/) (`astar(lmcut())`), and
+dispatches the plan steps as MQTT commands. See
+[doc/how-it-works.md](doc/how-it-works.md#ai-planning) for the full pipeline.
+
+Fast Downward is not bundled — build it once and point the hub at it:
+
+```
+git clone https://github.com/aibasel/downward.git && cd downward && ./build.py
+export FAST_DOWNWARD=/path/to/downward/fast-downward.py   # before `just run`
+```
+
+Without it the dashboard's AI Planning tab shows a planner error, and
+everything else keeps working. The weather sensor is configured from the
+dashboard's Weather card: enter coordinates for live Open-Meteo data, or
+switch it to manual mode and set cloud cover / forecast / daylight by hand
+(`WEATHER_LAT`/`WEATHER_LON`, if set, seed the coordinates on startup).
+
+Discord notifications are enabled by setting `DISCORD_WEBHOOK_URL` to a
+channel webhook (channel settings -> Integrations -> Webhooks): the hub then
+posts a status digest on an interval (`DISCORD_INTERVAL_S`, default hourly)
+and a ping when the water tank needs refilling (`DISCORD_MENTION="@here"` to
+mention the channel), plus an all-clear once it is refilled.
 
 ### `frontend/` — Svelte dashboard
 
 Single-page app (Svelte, Vite, Tailwind, shadcn-svelte, svelte-chartjs,
 lucide). It loads the current state over `/ws`, groups messages by topic, charts
-numeric payloads, and has a placeholder panel for AI planning (current plan and
-planning model) to be wired up later.
+numeric payloads, controls the weather source (Weather card), and has an AI
+Planning tab showing the current plan and planning model plus an Automation
+config card for editing the planner thresholds.
 
 ```
 cd frontend
