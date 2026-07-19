@@ -1,3 +1,5 @@
+import { writable } from 'svelte/store'
+
 /** Send an actuator command through the hub REST API. */
 export async function sendCommand(
   nodeId: string,
@@ -26,10 +28,19 @@ export interface PlanningThresholds {
   tank_full_cm: number
 }
 
+/**
+ * Last known thresholds, shared across components. getThresholds and
+ * updateThresholds refresh it, so e.g. the node cards' tank-percentage
+ * recomputes immediately when the Automation config panel saves.
+ */
+export const thresholds = writable<PlanningThresholds | null>(null)
+
 export async function getThresholds(): Promise<PlanningThresholds> {
   const res = await fetch('/api/planning')
   if (!res.ok) throw new Error(`planning state failed: ${res.status}`)
-  return (await res.json()).thresholds
+  const th: PlanningThresholds = (await res.json()).thresholds
+  thresholds.set(th)
+  return th
 }
 
 export async function updateThresholds(
@@ -41,7 +52,9 @@ export async function updateThresholds(
     body: JSON.stringify(update),
   })
   if (!res.ok) throw new Error(`thresholds update failed: ${res.status}`)
-  return res.json()
+  const th: PlanningThresholds = await res.json()
+  thresholds.set(th)
+  return th
 }
 
 /** Weather source configuration, mirrored from the hub's WeatherConfig. */

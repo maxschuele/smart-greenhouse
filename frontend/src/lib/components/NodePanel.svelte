@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getThresholds, type PlanningThresholds } from '$lib/api'
+  import { getThresholds, thresholds } from '$lib/api'
   import ActuatorToggle from '$lib/components/ActuatorToggle.svelte'
   import SensorChart from '$lib/components/SensorChart.svelte'
   import { Badge } from '$lib/components/ui/badge'
@@ -16,23 +16,21 @@
   const actuators = $derived(node.advert?.actuators ?? [])
 
   // Tank calibration for the distance -> % conversion, mirroring the hub's
-  // tank_pct() (problem_generator.py). Loaded once; edits to the thresholds
-  // show up on the next page load.
-  let thresholds = $state<PlanningThresholds | null>(null)
-
-  onMount(async () => {
-    try {
-      thresholds = await getThresholds()
-    } catch {
+  // tank_pct() (problem_generator.py). The shared thresholds store is
+  // refreshed whenever the Automation config panel saves, so the percentage
+  // recomputes live; the fetch here only seeds it on a fresh page load.
+  onMount(() => {
+    if ($thresholds === null) {
       // no thresholds -> the cm value is simply shown without a percentage
+      getThresholds().catch(() => {})
     }
   })
 
   function tankPct(distanceCm: number): number | null {
-    if (thresholds === null) return null
-    const span = thresholds.tank_empty_cm - thresholds.tank_full_cm
+    if ($thresholds === null) return null
+    const span = $thresholds.tank_empty_cm - $thresholds.tank_full_cm
     if (span <= 0) return null
-    const pct = (100 * (thresholds.tank_empty_cm - distanceCm)) / span
+    const pct = (100 * ($thresholds.tank_empty_cm - distanceCm)) / span
     return Math.max(0, Math.min(100, pct))
   }
 
