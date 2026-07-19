@@ -43,18 +43,18 @@ WEATHER_TOPIC = "virtual/weather"
 
 @dataclass
 class Thresholds:
-    moisture_dry_pct: float = 30.0       # below this -> soil-dry
-    moisture_dry_pct_hot: float = 40.0   # tighter threshold when hot forecast
+    moisture_dry_pct: float = 10.0       # below this -> soil-dry
+    moisture_dry_pct_hot: float = 30.0   # tighter threshold when hot forecast
     temp_high_c: float = 28.0            # above this -> temp-high
     humidity_high_pct: float = 70.0      # above this -> humidity-high
-    co2_high_ppm: float = 1000.0         # above this -> co2-high
+    co2_high_ppm: float = 3000.0         # above this -> co2-high
     tank_low_pct: float = 25.0           # below this -> tank-low
     cloud_cover_threshold: float = 0.60  # above this -> light-needed
     hot_forecast_c: float = 30.0         # forecast above this -> hot mode
     # Ultrasonic calibration: distance from the sensor to the water surface
     # when the tank is empty resp. full, for the distance -> % conversion.
-    tank_empty_cm: float = 30.0
-    tank_full_cm: float = 5.0
+    tank_empty_cm: float = 15.0
+    tank_full_cm: float = 4.5
 
 
 # ---------------------------------------------------------------------------

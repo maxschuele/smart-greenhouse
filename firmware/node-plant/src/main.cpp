@@ -25,7 +25,7 @@
 // The pump runs in fixed-length doses: a pump=true command starts a dose and
 // the firmware stops it after PUMP_RUN_MS on its own, so a lost "off" command
 // or a dead hub can never leave the pump running.
-#define PUMP_RUN_MS 3000
+#define PUMP_RUN_MS 2000
 
 namespace {
 sgh::Node node(NODE_ID, "xiao-esp32c3", "0.1.0");

@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "DHT.h"
-
 #include "SghNode.h"
 #include "config.h"
 
@@ -21,9 +20,9 @@ const float SUPPLY_VOLTAGE = 5.0F;
 const float DIVIDER_RATIO = 2.0F; // two equal resistors halve the voltage
 const float RL_KOHM = 10.0F;
 const float CLEAN_AIR_RATIO = 3.6F;
-const float CURVE_A = 116.6020682F;  // ppm = A * (Rs/R0)^B
+const float CURVE_A = 116.6020682F; // ppm = A * (Rs/R0)^B
 const float CURVE_B = -2.769034857F;
-const float R0_CLEAN_AIR = 76.63F;   // kOhm, replace with a calibrated value
+const float R0_CLEAN_AIR = 51.35F; // Calibrated
 
 // LED on D6, driven directly by the pin: HIGH turns it on.
 #define LED_PIN D6
@@ -45,7 +44,8 @@ namespace {
 sgh::Node node(NODE_ID, "xiao-esp32c3", "0.1.0");
 DHT dht(DHT_PIN, DHTTYPE);
 
-// Average MQ-135 pin voltage over many samples, scaled back through the divider.
+// Average MQ-135 pin voltage over many samples, scaled back through the
+// divider.
 float readSensorVoltage() {
     uint32_t sum = 0;
     const int samples = 64;
@@ -166,7 +166,8 @@ void setup() {
     dht.begin();
     analogSetPinAttenuation(MQ135_PIN, ADC_11db);
 
-    // Drive outputs off before enabling the pins so they do not glitch on at boot.
+    // Drive outputs off before enabling the pins so they do not glitch on at
+    // boot.
     digitalWrite(LED_PIN, LED_OFF);
     digitalWrite(FAN_PIN, RELAY_OFF);
     pinMode(LED_PIN, OUTPUT);
